@@ -1,0 +1,18 @@
+"""Module to answer a question using the Guru orchestrator."""
+
+from orchestrator import Guru
+from private_settings import PRIVATE_SETINGS
+
+
+if __name__ == "__main__":
+
+    # Create the Guru instance
+    if PRIVATE_SETINGS["LLM_LOCAL"]:
+        guru = Guru("ollama", "gpt-oss:20b", "mxbai-embed-large", "english", 0, "compact", "Italy")
+    else:
+        guru = Guru("openai", "gpt-4", "text-embedding-3-small", "english", 0, "compact", "Italy")
+
+    # Run the guru
+    response = guru.user_message("What is the best way to save energy with a washing machine?")
+
+    print(response)
