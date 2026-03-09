@@ -1,11 +1,25 @@
 """Module to create a knowledge base from a text files."""
 
+# Standard library
 import hashlib
 import os
 import re
+import io
 
+# Third-party
 import joblib
 import numpy as np
+import requests
+import chromadb
+from chromadb.config import Settings
+from tqdm import tqdm
+from bs4 import BeautifulSoup
+from pdfminer.high_level import extract_text_to_fp
+from pdfminer.layout import LAParams
+from sklearn.metrics.pairwise import cosine_similarity
+from rdflib import FOAF, OWL, RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
+
+# LangChain
 from langchain.embeddings import init_embeddings
 from langchain_community.document_loaders import AsyncHtmlLoader, PyPDFLoader
 from langchain_community.document_transformers import Html2TextTransformer
@@ -13,27 +27,19 @@ from langchain_core.documents import Document
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
-from rdflib import FOAF, OWL, RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
-from sklearn.metrics.pairwise import cosine_similarity
-from tqdm import tqdm
-import chromadb
-from chromadb.config import Settings
 
-import io
-import requests
-from pdfminer.high_level import extract_text_to_fp
-from pdfminer.layout import LAParams
-
+# Local
 from llm import LLMHandler
-
-from .utils.graph_prompt import extract_descriptions_for_entities, extract_descriptions_for_triples, translate_chunk, summarize_chunk
+from .utils.graph_prompt import (
+    extract_descriptions_for_entities,
+    extract_descriptions_for_triples,
+    translate_chunk,
+    summarize_chunk,
+)
 from .utils.graph_helpers import process_name_or_relationship, normalize_l2, sparql_query
 from .utils.energenius_graph import EnergeniusGraph
 from .utils.syntactic_disambiguator import SyntacticDisambiguator
-
 from itertools import permutations
-
-from bs4 import BeautifulSoup
 
 
 class KnowledgeExtractor:
@@ -41,19 +47,21 @@ class KnowledgeExtractor:
 
     def __init__(self, provider: str, model: str, embedding: str):
         """_Initialize the KnowledgeExtractor._
+
         Args:
             provider (str): _Description of the model provider._
             model (str): _Description of the model name._
             embedding (str): _Description of the embedding model name._
         """
-
-        # Initialize the LLMHandler and embedding model.
+        # LLM wrapper used for translation/summarization/extraction prompts.
         self.llm_handler = LLMHandler(
             provider=provider, model=model, temperature=0.0, language=None, keep_history=False
         )
 
+        # Embedding backend used in chunking/disambiguation/indexing.
         self.embeddings = init_embeddings(model=embedding, provider=provider)
 
+        # Transformer that converts text chunks into graph-style relations.
         self.llm_graph_transformer = LLMGraphTransformer(
             llm=self.llm_handler.get_model(),
             #node_properties=True,
@@ -69,110 +77,8 @@ class KnowledgeExtractor:
 - Do not merge multi-word entities into single tokens (e.g., prefer Class A instead of ClassA)""",
         )
 
-    def __remove_non_alphanumerical(self, s: str, hash: bool = True) -> str:
-        strin = re.sub("[^A-Za-z0-9]", "_", s)
-        h = hashlib.md5(s.encode()).hexdigest()
-        return strin + "_" + h if hash else strin
-
-    def _strip_quotes(self, s):
-        return s[1:-1] if s and s[0] == s[-1] and s[0] in ('"', "'") else s
-
-
-    def _get_last_sentence(self, text):
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-        sentences 
-        return sentences[-1] if sentences and len(sentences[-1].strip()) >= 4 else ''
-
-    def _get_first_sentence(self, text):
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-        return sentences[0] if sentences else ''
 
     
-    def __extract_main_content(self, html):
-        # Alternatively
-        #return Html2TextTransformer().transform_documents(html_docs)
-
-        soup = BeautifulSoup(html, 'html.parser')
-
-        # Fallback: remove known non-content sections
-        for tag in soup.find_all(['header', 'footer', 'nav', 'aside', 'form', 'script', 'style']):
-            tag.decompose()
-        for tag in soup.find_all(attrs={'aria-hidden': 'true'}):
-            tag.decompose()
-
-        # List of common tag selectors for main content
-        candidates = [
-            ('main', {}),
-            ('div', {'id': 'content'}),
-            ('div', {'id': 'main-content'}),
-            ('div', {'id': 'main'}),
-            ('div', {'id': 'article-content'}),
-            ('div', {'id': 'page-content'}),
-            ('div', {'id': 'primary'}),
-            ('div', {'id': 'post'}),
-            ('div', {'class': 'content'}),
-            ('div', {'class': 'main-content'}),
-            ('div', {'class': 'article-content'}),
-            ('div', {'class': 'post-content'}),
-            ('div', {'class': 'post'}),
-            ('div', {'class': 'entry-content'}),
-            ('div', {'class': 'page-content'}),
-            ('div', {'class': 'blog-post'}),
-            ('div', {'class': 'story'}),
-            ('section', {'class': 'content'}),
-            ('section', {'id': 'content'}),
-            ('section', {'class': 'main-content'}),
-            ('section', {'id': 'main-content'}),
-            ('section', {'class': 'article'}),
-            ('section', {'id': 'article'}),
-            ('section', {}),
-        ]
-
-        # Try each candidate selector in order
-        for tag, attrs in candidates:
-            matches = soup.find_all(tag, attrs=attrs)
-            if matches:
-                return '\n\n'.join(
-                    BeautifulSoup(
-                        re.sub(r'(?i)<(h[1-6]\b[^>]*)>', r'|<\1>', str(match)),
-                        'html.parser'
-                    ).get_text(separator='\n', strip=True).replace("||", "|")
-                    for match in matches
-                )
-
-        return soup.get_text(separator='\n', strip=True)
-    
-
-    def __extract_font_size(self, style):
-        match = re.search(r'font-size:(\d+)px', style)
-        return int(match.group(1)) if match else None
-    
-    def __convert_spans_to_headings(self, html_content):
-        soup = BeautifulSoup(html_content, "html.parser")
-
-        # Parse and convert spans to headings
-        for span in soup.find_all("span"):
-            style = span.get("style", "")
-            font_size = self.__extract_font_size(style)
-            if font_size is not None:
-                if font_size >= 26:
-                    tag = "h1"
-                elif 22 <= font_size < 26:
-                    tag = "h2"
-                elif 18 <= font_size < 22:
-                    tag = "h3"
-                else:
-                    continue
-                new_tag = soup.new_tag(tag)
-                new_tag.string = span.get_text()
-                span.replace_with(new_tag)
-            else:
-                continue
-
-        # Final HTML with semantic headings
-        return str(soup)
-
-    # Run the extraction
     def run(
         self,
         file_name: str,
@@ -189,9 +95,9 @@ class KnowledgeExtractor:
     ) -> None:
         """_Main function to create the knowledge base._"""
 
-        # Initialize the variables
+        # Base data path for this KB run.
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(dir_path, folder)
+        path = os.path.join(dir_path, "data", folder)
 
         # Checking if files folder is present
         if not os.path.exists(path):
@@ -667,32 +573,150 @@ class KnowledgeExtractor:
                 emb = self.embeddings.embed_query(row["content"])
                 collection_chunks.add(ids=[row["chunk"]], embeddings=[emb])
 
-
         return
+    
+
+
+# Helper functions
+
+def remove_non_alphanumerical(s: str, hash: bool = True) -> str:
+    """Sanitize string for URI-safe ids; optional md5 suffix for uniqueness."""
+    strin = re.sub("[^A-Za-z0-9]", "_", s)
+    h = hashlib.md5(s.encode()).hexdigest()
+    return strin + "_" + h if hash else strin
+
+def strip_quotes(s):
+    """Remove matching wrapping single/double quotes from a string."""
+    return s[1:-1] if s and s[0] == s[-1] and s[0] in ('"', "'") else s
+
+
+def get_last_sentence(text):
+    """Return last sentence if long enough, otherwise empty."""
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    sentences
+    return sentences[-1] if sentences and len(sentences[-1].strip()) >= 4 else ""
+
+
+def get_first_sentence(text):
+    """Return first sentence from text."""
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    return sentences[0] if sentences else ""
+
+
+def extract_main_content(html):
+    """Extract main content from HTML by trying common article selectors."""
+    # Alternative route kept for reference:
+    # return Html2TextTransformer().transform_documents(html_docs)
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Remove obvious non-content elements first.
+    for tag in soup.find_all(["header", "footer", "nav", "aside", "form", "script", "style"]):
+        tag.decompose()
+    for tag in soup.find_all(attrs={"aria-hidden": "true"}):
+        tag.decompose()
+
+    # Common selectors where article content is usually located.
+    candidates = [
+        ("main", {}),
+        ("div", {"id": "content"}),
+        ("div", {"id": "main-content"}),
+        ("div", {"id": "main"}),
+        ("div", {"id": "article-content"}),
+        ("div", {"id": "page-content"}),
+        ("div", {"id": "primary"}),
+        ("div", {"id": "post"}),
+        ("div", {"class": "content"}),
+        ("div", {"class": "main-content"}),
+        ("div", {"class": "article-content"}),
+        ("div", {"class": "post-content"}),
+        ("div", {"class": "post"}),
+        ("div", {"class": "entry-content"}),
+        ("div", {"class": "page-content"}),
+        ("div", {"class": "blog-post"}),
+        ("div", {"class": "story"}),
+        ("section", {"class": "content"}),
+        ("section", {"id": "content"}),
+        ("section", {"class": "main-content"}),
+        ("section", {"id": "main-content"}),
+        ("section", {"class": "article"}),
+        ("section", {"id": "article"}),
+        ("section", {}),
+    ]
+
+    # Try selectors in order and return first useful extraction.
+    for tag, attrs in candidates:
+        matches = soup.find_all(tag, attrs=attrs)
+        if matches:
+            return "\n\n".join(
+                BeautifulSoup(
+                    re.sub(r"(?i)<(h[1-6]\b[^>]*)>", r"|<\1>", str(match)),
+                    "html.parser",
+                )
+                .get_text(separator="\n", strip=True)
+                .replace("||", "|")
+                for match in matches
+            )
+
+    # Fallback: plain text from entire page.
+    return soup.get_text(separator="\n", strip=True)
+
+
+def extract_font_size(style):
+    """Extract integer px font-size from inline style string."""
+    match = re.search(r"font-size:(\d+)px", style)
+    return int(match.group(1)) if match else None
+
+
+def convert_spans_to_headings(html_content):
+    """Promote large-font spans into semantic headings for better chunking."""
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    for span in soup.find_all("span"):
+        style = span.get("style", "")
+        font_size = extract_font_size(style)
+        if font_size is not None:
+            if font_size >= 26:
+                tag = "h1"
+            elif 22 <= font_size < 26:
+                tag = "h2"
+            elif 18 <= font_size < 22:
+                tag = "h3"
+            else:
+                continue
+
+            new_tag = soup.new_tag(tag)
+            new_tag.string = span.get_text()
+            span.replace_with(new_tag)
+
+    return str(soup)
 
         
 
-    
+# Syntactic disambiguation helper functions
 
 def is_valid_text(text: str) -> bool:
     """Check if text contains alphanumeric characters and <= 5 words."""
-    if not re.match(r'^(?=.*[a-zA-Z0-9]).+$', text):
+    if not re.match(r"^(?=.*[a-zA-Z0-9]).+$", text):
         return False
-    return len(re.split(r'[ _]+', text)) <= 5
+    return len(re.split(r"[ _]+", text)) <= 5
+
 
 def normalize_entity(entity: str, processor) -> str | None:
-    """Process and validate entity string."""
+    """Normalize an entity and return None if result is invalid."""
     processed = processor(entity)
-    return processed if re.match(r'^(?=.*[a-zA-Z0-9]).+$', processed) else None
+    return processed if re.match(r"^(?=.*[a-zA-Z0-9]).+$", processed) else None
+
 
 def to_keep(s1: str, s2: str) -> str:
-    """Choose which entity string to keep based on word count and length."""
-    s1c, s2c = s1.count(' '), s2.count(' ')
+    """Pick representative string between two equivalent entities."""
+    s1c, s2c = s1.count(" "), s2.count(" ")
     if s1c > s2c and s1c < 5:
         return s1
     elif s2c > s1c and s2c < 5:
         return s2
     return s1 if len(s1) <= len(s2) else s2
+
 
 def syntactic_disambiguation(graph_documents, embeddings, llm_handler, processor, comparator, iterations: int = 5):
     """Perform syntactic disambiguation across graph documents."""
