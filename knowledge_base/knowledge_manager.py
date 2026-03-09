@@ -114,7 +114,7 @@ class KnowledgeManager:
         return updated_list
 
 
-    def user_message(self, message: str, answer_length: str, region: str) -> str:
+    def user_message(self, message: str, answer_length: str) -> str:
         """
         Process a user message and return a response prompt/result.
 
@@ -126,7 +126,6 @@ class KnowledgeManager:
         5. Build context and final prompt.
         6. Fallback retrieval if no triples/entities found.
         """
-        print(message, answer_length, region, self.language)
 
         # Resolve absolute path of KB data directory.
         self.path = os.path.join(
