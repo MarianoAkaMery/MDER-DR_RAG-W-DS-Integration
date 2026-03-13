@@ -196,24 +196,13 @@ See `LICENSE`.
 ## Citation
 
 ```
-@InProceedings{10.1007/978-3-031-97207-2_4,
-author="Campi, Riccardo
-and Pinciroli Vago, Nicol{\`o} Oreste
-and Giudici, Mathyas
-and Rodriguez-Guisado, Pablo Barrachina
-and Brambilla, Marco
-and Fraternali, Piero",
-editor="Verma, Himanshu
-and Bozzon, Alessandro
-and Mauri, Andrea
-and Yang, Jie",
-title="A Graph-Based RAG for Energy Efficiency Question Answering",
-booktitle="Web Engineering",
-year="2026",
-publisher="Springer Nature Switzerland",
-address="Cham",
-pages="41--55",
-abstract="In this work, we investigate the use of Large Language Models (LLMs) within a Graph-based Retrieval Augmented Generation (RAG) architecture for Energy Efficiency (EE) Question Answering. First, the system automatically extracts a Knowledge Graph (KG) from guidance and regulatory documents in the energy field. Then, the generated graph is navigated and reasoned upon to provide users with accurate answers in multiple languages. We implement a human-based validation using the RAGAs framework properties, a validation dataset composed of 101 question-answer pairs, and some domain experts. Results confirm the potential of this architecture and identify its strengths and weaknesses. Validation results show how the system correctly answers in about three out of four of the cases ({\$}{\$}75.2{\backslash}pm 2.7{\backslash}{\%}{\$}{\$}75.2{\textpm}2.7{\%}), with higher results on questions related to more general EE answers (up to {\$}{\$}81.0{\backslash}pm 4.1{\backslash}{\%}{\$}{\$}81.0{\textpm}4.1{\%}), and featuring promising multilingual abilities ({\$}{\$}4.4{\backslash}{\%}{\$}{\$}4.4{\%}accuracy loss due to translation).",
-isbn="978-3-031-97207-2"
+@misc{campi2026mderdrmultihopquestionanswering,
+      title={MDER-DR: Multi-Hop Question Answering with Entity-Centric Summaries}, 
+      author={Riccardo Campi and Nicolò Oreste Pinciroli Vago and Mathyas Giudici and Marco Brambilla and Piero Fraternali},
+      year={2026},
+      eprint={2603.11223},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2603.11223}, 
 }
 ```
