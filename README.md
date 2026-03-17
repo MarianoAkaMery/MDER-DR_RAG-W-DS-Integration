@@ -152,7 +152,7 @@ MDER-DR_RAG/
 │       ├── graph_helpers.py
 │       ├── graph_parameter.py
 │       ├── graph_prompt.py
-│       └── syntactic_disambiguator.py
+│       └── disambiguator.py
 ├── llm/
 │   ├── __init__.py
 │   └── langchain.py                  # LLM + embedding integration layer
