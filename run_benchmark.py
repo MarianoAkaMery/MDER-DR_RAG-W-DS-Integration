@@ -1,4 +1,4 @@
-"""Module to benchmark the energy consumption of the Guru orchestrator."""
+"""Module to benchmark a specific knowledge base."""
 
 import pandas as pd
 
