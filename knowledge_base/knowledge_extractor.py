@@ -270,7 +270,6 @@ class KnowledgeExtractor:
                     
                 # Translation
                 if "en" not in preprocessed_chunks[i].metadata["language"].lower():
-                    print("translating chunk from language:", preprocessed_chunks[i].metadata["language"])
                     preprocessed_chunks[i].page_content = strip_quotes(
                         self.llm_handler.generate_response(translate_chunk(), f"{preprocessed_chunks[i].page_content}", False)
                     )
