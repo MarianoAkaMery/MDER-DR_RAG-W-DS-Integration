@@ -24,7 +24,7 @@ Edit `private_settings.py` to set API keys and runtime options (local vs online 
 
 ## Run modes
 
-### 1) Web interface (Streamlit)
+### 1) Run web interface (Streamlit)
 
 Use the Streamlit entrypoint:
 
@@ -32,25 +32,15 @@ Use the Streamlit entrypoint:
 streamlit run streamlit_ui.py
 ```
 
-### 2) API mode
+### 2) Run question answering directly
 
 Instantiate the `Guru` class from:
 
 - `orchestrator/guru.py`
 
-Example (minimal), from `answer_question.py`:
-
-```python
-from orchestrator.guru import Guru
-
-guru = Guru(...)
-response = guru.user_message("Your question here")
-print(response)
-```
-
 #### Guru class
 
-`Guru` is the main API entry point for question answering.
+`Guru` is the main entry point for question answering.
 
 #### Parameters needed to instantiate `Guru`
 
@@ -70,21 +60,24 @@ print(response)
   Knowledge base storage folder (similar concept used in KB creation, e.g., `"Switzerland"`).
   
 
-Example with explicit parameters:
+Example with explicit parameters, from `answer_question.py`:
 
 ```python
 from orchestrator.guru import Guru
 
 guru = Guru(
     provider="ollama",
-    model="gpt-oss:120b",
+    model="gpt-oss:20b",
     embedding="mxbai-embed-large",
     language="english",
     temperature=0,
     answer_length="compact",
-    knowledge_base="Switzerland",
-    use_knowledge: bool = True
+    knowledge_base="Italy",
+    use_knowledge=True
 )
+
+response = guru.user_message("What is the best way to save energy with a washing machine?")
+print(response)
 ```
 
 #### Inputs and outputs
@@ -130,7 +123,7 @@ python run_benchmark.py
 - `answer_question.py` — CLI-style question answering entrypoint
 - `streamlit_ui.py` — web interface
 - `run_benchmark.py` — benchmark runner
-- `orchestrator/guru.py` — API orchestrator class (`Guru`)
+- `orchestrator/guru.py` — main orchestrator class (`Guru`)
 - `knowledge_base/` — extraction and storage logic
 - `llm/` — LLM integration layer
 
