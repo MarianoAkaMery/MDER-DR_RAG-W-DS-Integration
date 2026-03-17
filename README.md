@@ -22,9 +22,7 @@ pip install -r requirements.txt
 
 Edit `private_settings.py` to set API keys and runtime options (local vs online model usage).
 
-## Run modes
-
-### 1) Create / rebuild knowledge base
+## 1) Create / rebuild knowledge base
 
 Run the knowledge base creator script:
 
@@ -36,7 +34,6 @@ This script mainly calls `KnowledgeExtractor.run(...)` with:
 - `knowledge_base="Tomato recipes"`
 - one or more URLs in `html_links`
 - many `load_cached_*` flags default to `False`
-
 
 Example with explicit parameters, from `build_knowledge_base.py`:
 
@@ -52,7 +49,7 @@ ke.run(
 
 In this example, artifacts are written under `knowledge_base/data/Tomato_recipes/`
 
-### 2) Run web interface (Streamlit)
+## 2) Run web interface (Streamlit)
 
 Use the Streamlit entrypoint:
 
@@ -60,17 +57,17 @@ Use the Streamlit entrypoint:
 streamlit run streamlit_ui.py
 ```
 
-### 3) Run question answering directly
+## 3) Run question answering directly
 
 Instantiate the `Guru` class from:
 
 - `orchestrator/guru.py`
 
-#### Guru class
+### Guru class
 
 `Guru` is the main entry point for question answering.
 
-#### Parameters needed to instantiate `Guru`
+### Parameters needed to instantiate `Guru`
 
 - `provider` (`str`)  
   LLM backend provider (e.g., `"ollama"` or `"openai"`).
@@ -108,7 +105,7 @@ response = guru.user_message("What are the ingredients of Pasta al pomodoro?")
 print(response)
 ```
 
-#### Inputs and outputs
+### Inputs and outputs
 
 **Primary method used in this project:**
 
@@ -129,7 +126,7 @@ print(response)
 2. Pass a question string to `user_message(...)`.
 3. Return or print the resulting answer string.
 
-### 4) Run benchmark
+## 4) Run benchmark
 
 Before running the benchmark, you must provide a dataset file inside the `benchmark/` directory.
 
@@ -149,6 +146,8 @@ The script will:
 - Instantiate the Guru pipeline using the specified settings
 - Execute all questions
 - Collect and store answers in a separated `.csv` file
+
+<hr>
 
 ## Main project files
 
