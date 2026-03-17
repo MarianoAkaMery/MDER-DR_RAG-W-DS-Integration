@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
 
-class SyntacticDisambiguator:
+class Disambiguator:
 
     def __init__(self, graph_documents, embedding_function, llm_call, max_iter=5):
 
@@ -55,7 +55,7 @@ class SyntacticDisambiguator:
 
         all_entities_temp = copy.deepcopy(self.all_entities)
 
-        for i in tqdm(range(len(keys)), desc="Syntactic disambiguation: "):
+        for i in tqdm(range(len(keys)), desc="Disambiguation: "):
             for j in range(i + 1, len(keys)):
                 if similarity_matrix[i][j] > 0.85 and not names_types[i] == names_types[j] and not self.are_connected(names[i], types[i], names[j], types[j]) and not self.is_alias(names[i], types[i], names[j], types[j]) and not self.contains_number(names[i], types[i], names[j], types[j]):
                     print(f"{keys[i]} ({names_types[i]}) - {keys[j]} ({names_types[j]})")
