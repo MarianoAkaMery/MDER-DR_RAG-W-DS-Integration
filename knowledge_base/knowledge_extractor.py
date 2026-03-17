@@ -66,7 +66,7 @@ class KnowledgeExtractor:
             llm=self.llm_handler.get_model(),
             #node_properties=True,
             #relationship_properties=True,
-            ignore_tool_usage=True,
+            #ignore_tool_usage=True,
             additional_instructions="""Ensure that:
 - No detail is omitted, even if implicit or inferred
 - Compound or nested relationships are captured
