@@ -65,7 +65,7 @@ Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
         if self.use_knowledge:
-            return self.llm.generate_response(self.know_base.user_message(message, self.answer_length, self.knowledge_base), message, False)
+            return self.llm.generate_response(self.know_base.user_message(message, self.answer_length), message, False)
         else:
             return self.llm.generate_response(llm_only, message, use_past_history=False)
 
@@ -90,7 +90,7 @@ Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
         if self.use_knowledge:
-            yield from self.llm.generate_response_stream(self.know_base.user_message(message, self.answer_length, self.knowledge_base), message, False)
+            yield from self.llm.generate_response_stream(self.know_base.user_message(message, self.answer_length), message, False)
         else:
             yield from self.llm.generate_response_stream(llm_only, message, use_past_history=False)
         
