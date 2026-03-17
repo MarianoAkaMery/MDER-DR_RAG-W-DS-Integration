@@ -24,12 +24,12 @@ st.sidebar.title("Model Parameters")
 provider = st.sidebar.selectbox("Provider", ["openai", "ollama"], index=1)
 
 if provider == "ollama":
-    model = st.sidebar.selectbox("Model", ["gpt-oss:20b", "gpt-oss:120b", "llama3.2", "mistral"], index=0)
+    model = st.sidebar.selectbox("Model", ["gpt-oss:20b"], index=0)
     embedding = st.sidebar.selectbox(
-        "Embedding", ["mxbai-embed-large", "nomic-embed-text"], index=0
+        "Embedding", ["mxbai-embed-large"], index=0
     )
 elif provider == "openai":
-    model = st.sidebar.selectbox("Model", ["gpt-3.5-turbo", "gpt-4", "ollama"], index=1)
+    st.sidebar.selectbox("Model", ["gpt-3.5-turbo", "gpt-4"], index=1)
     embedding = st.sidebar.selectbox(
         "Embedding", ["text-embedding-3-small", "text-embedding-3-large"], index=0
     )
@@ -38,13 +38,13 @@ else:
     embedding = "None"
 
 language = st.sidebar.selectbox(
-    "Language", ["English", "Italiano", "Español", "Română"], index=0
+    "Language", ["English", "Italiano"], index=0
 )
 temperature = st.sidebar.slider(
     "Temperature", min_value=0.0, max_value=1.0, value=0.75, step=0.1
 )
-region = st.sidebar.selectbox(
-    "User region", ["Italy", "Switzerland", "Europe", "Generic"], index=0#, "QA_split_1"], index=0
+knowledge_base = st.sidebar.selectbox(
+    "Knowledge Base", ["Italy", "Switzerland", "Europe", "Generic"], index=0
 )
 answer_length = st.sidebar.selectbox(
    "Answer length", ["Compact", "Extensive", "Markdown"], index=0
@@ -62,7 +62,7 @@ orchestrator = LiveOrchestrator(
     language=language,
     temperature=temperature,
     answer_length=answer_length,
-    region=region,
+    knowledge_base=knowledge_base,
     use_knowledge=use_knowledge_base,
 )
 
