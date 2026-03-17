@@ -12,8 +12,7 @@ else:
     ke = KnowledgeExtractor("openai", "gpt-4", "text-embedding-3-small")
 
 ke.run(
-    folder="Tomato recipes",
-    file_name="rdf_graph",
+    knowledge_base="Tomato recipes",
     html_links=[
         "https://en.wikipedia.org/wiki/Tomato_sauce",
         "https://en.wikipedia.org/wiki/Pasta_al_pomodoro",
