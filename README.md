@@ -1,6 +1,7 @@
 # MDER-DR_RAG
 
 RAG-based project for building a domain knowledge base and answering questions via API or web UI.
+
 The paper is available <a href="https://arxiv.org/abs/2603.11223">here</a>.
 
 <br>
