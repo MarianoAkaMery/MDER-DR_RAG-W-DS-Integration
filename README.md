@@ -67,16 +67,16 @@ from orchestrator.guru import Guru
 
 guru = Guru(
     provider="ollama",
-    model="gpt-oss:120b",
+    model="gpt-oss:20b",
     embedding="mxbai-embed-large",
     language="english",
     temperature=0,
     answer_length="compact",
-    knowledge_base="Switzerland",
+    knowledge_base="Italy",
     use_knowledge=True
 )
 
-response = guru.user_message("Your question here")
+response = guru.user_message("What is the best way to save energy with a washing machine?")
 print(response)
 ```
 
