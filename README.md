@@ -1,6 +1,9 @@
 # MDER-DR_RAG
 
 RAG-based project for building a domain knowledge base and answering questions via API or web UI.
+The paper is available <a href="https://arxiv.org/abs/2603.11223">here</a>.
+
+<br>
 
 ## Requirements
 
@@ -21,6 +24,8 @@ pip install -r requirements.txt
 ## Configuration
 
 Edit `private_settings.py` to set API keys and runtime options (local vs online model usage).
+
+<br>
 
 ## 1) Create / rebuild knowledge base
 
@@ -49,6 +54,8 @@ ke.run(
 
 In this example, artifacts are written under `knowledge_base/data/Tomato_recipes/`
 
+<br>
+
 ## 2) Run web interface (Streamlit)
 
 Use the Streamlit entrypoint:
@@ -56,6 +63,8 @@ Use the Streamlit entrypoint:
 ```bash
 streamlit run streamlit_ui.py
 ```
+
+<br>
 
 ## 3) Run question answering directly
 
@@ -84,7 +93,6 @@ Instantiate the `Guru` class from:
 - `knowledge_base` (`str`)  
   Knowledge base storage folder (similar concept used in KB creation, e.g., `"Switzerland"`).
   
-
 Example with explicit parameters, from `answer_question.py`:
 
 ```python
@@ -126,6 +134,8 @@ print(response)
 2. Pass a question string to `user_message(...)`.
 3. Return or print the resulting answer string.
 
+<br>
+
 ## 4) Run benchmark
 
 Before running the benchmark, you must provide a dataset file inside the `benchmark/` directory.
@@ -147,6 +157,8 @@ The script will:
 - Execute all questions
 - Collect and store answers in a separated `.csv` file
 
+<br>
+
 ## Main project files
 
 - `build_knowledge_base.py` — build/update the knowledge base from sources
@@ -156,6 +168,8 @@ The script will:
 - `orchestrator/guru.py` — main orchestrator class (`Guru`)
 - `knowledge_base/` — extraction and storage logic
 - `llm/` — LLM integration layer
+
+<br>
 
 ## Project tree
 
@@ -200,6 +214,8 @@ MDER-DR_RAG/
 - `knowledge_base/data/` stores graph artifacts.
 - `knowledge_base/utils/` contains helper utilities for graph creation and processing.
 
+<br>
+
 ## Typical workflow
 
 1. Create and activate virtual environment  
@@ -211,9 +227,13 @@ MDER-DR_RAG/
    - API integration: instantiate `Guru` in your application/tests
    - Benchmark: `python run_benchmark.py`
 
+<br>
+
 ## License
 
 See `LICENSE`.
+
+<br>
 
 ## Citation
 
