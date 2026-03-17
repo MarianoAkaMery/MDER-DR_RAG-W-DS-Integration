@@ -81,8 +81,7 @@ class KnowledgeExtractor:
     
     def run(
         self,
-        file_name: str,
-        folder: str = "files",
+        knowledge_base: str = "files",
         html_links: list[str] = None,
         documents: list[dict] = None,
         load_cached_docs: bool = False,
@@ -96,8 +95,9 @@ class KnowledgeExtractor:
         """_Main function to create the knowledge base._"""
 
         # Base data path for this KB run.
+        file_name = "rdf_graph"
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(dir_path, "data", folder)
+        path = os.path.join(dir_path, "data", knowledge_base)
 
         # Checking if files folder is present
         if not os.path.exists(path):
