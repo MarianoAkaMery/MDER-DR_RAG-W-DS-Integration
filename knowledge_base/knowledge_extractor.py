@@ -536,9 +536,10 @@ class KnowledgeExtractor:
             #collection_entities.delete(ids=collection_entities.get()["ids"])
             entities = graph.get_entities()
             for index, row in tqdm(list(entities.iterrows()), desc="Embedding entities: "):
+                emb = self.embeddings.embed_query(row["name"])
+                collection_entities.add(ids=[row["entity"]], embeddings=[emb])
                 if len(row["description"]) > 1500:
                     row["description"] = row["description"][:1500] + "..."
-                collection_entities.add(ids=[row["entity"]], embeddings=[emb])
                 emb_desc = self.embeddings.embed_query(row["description"])
                 collection_descriptions.add(ids=[row["entity"]], embeddings=[emb_desc])
 
