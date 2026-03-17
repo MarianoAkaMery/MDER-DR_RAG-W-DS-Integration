@@ -14,5 +14,4 @@ if __name__ == "__main__":
 
     # Run the guru
     response = guru.user_message("What is the best way to save energy with a washing machine?")
-
     print(response)
