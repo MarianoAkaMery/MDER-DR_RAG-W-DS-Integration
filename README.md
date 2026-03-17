@@ -147,8 +147,6 @@ The script will:
 - Execute all questions
 - Collect and store answers in a separated `.csv` file
 
-<hr>
-
 ## Main project files
 
 - `build_knowledge_base.py` — build/update the knowledge base from sources
