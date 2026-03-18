@@ -6,7 +6,7 @@ from private_settings import PRIVATE_SETINGS
 
 # Creating and running the knowledge base class based on the environment
 if PRIVATE_SETINGS["LLM_LOCAL"]:
-    ke = KnowledgeExtractor("ollama", "gpt-oss:20b", "mxbai-embed-large")
+    ke = KnowledgeExtractor("ollama", "llama3.2", "mxbai-embed-large")
 else:
     # Online
     ke = KnowledgeExtractor("openai", "gpt-4", "text-embedding-3-small")

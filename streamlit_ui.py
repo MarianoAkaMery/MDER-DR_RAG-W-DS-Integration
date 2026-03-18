@@ -24,7 +24,9 @@ st.sidebar.title("Model Parameters")
 provider = st.sidebar.selectbox("Provider", ["openai", "ollama"], index=1)
 
 if provider == "ollama":
-    model = st.sidebar.selectbox("Model", ["gpt-oss:20b"], index=0)
+    model = st.sidebar.selectbox(
+        "Model", ["llama3.2", "llama3.2:1b", "gpt-oss:20b"], index=0
+    )
     embedding = st.sidebar.selectbox(
         "Embedding", ["mxbai-embed-large"], index=0
     )
@@ -118,7 +120,6 @@ if chat_upload is not None:
             else:
                 # add the messages to the session state
                 st.session_state["messages"] = CHAT_DATA
-                #st.success("Chat file uploaded successfully.")
 
                 # Call to the orchestrator to load the messages
                 orchestrator.load_past_messages(CHAT_DATA)
@@ -137,27 +138,24 @@ if prompt := st.chat_input("Enter your query"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
 
-    # Display waiting message
-    #with st.spinner("Thinking..."):
-    #    # Calling the orchestrator to get the response
-    #    agent = orchestrator.user_message(prompt)
-    #
-    #    # Store and display the response
-    #    st.session_state["messages"].append({"role": "assistant", "content": agent})
-    #    st.chat_message("assistant").markdown(agent)
-
     # Streaming: create an empty placeholder for assistant message
     with st.chat_message("assistant"):
         response_placeholder = st.empty()
         full_response = ""
 
-        # Show spinner while streaming response
-        with st.spinner(""):
-            for chunk in orchestrator.user_message(prompt):
-                full_response += chunk
-                response_placeholder.markdown(full_response)# + "▌")  # Show typing cursor
+        try:
+            with st.spinner(""):
+                for chunk in orchestrator.user_message(prompt):
+                    full_response += chunk
+                    response_placeholder.markdown(full_response)
 
-        response_placeholder.markdown(full_response)  # Final cleanup
-
-        # Save final assistant message to history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except FileNotFoundError as exc:
+            response_placeholder.empty()
+            st.error(
+                f"{exc}\n\nTip: build a knowledge base first or disable 'Use Knowledge Base' in the sidebar."
+            )
+        except Exception as exc:
+            response_placeholder.empty()
+            st.error(f"Unexpected error: {exc}")

@@ -133,12 +133,19 @@ class KnowledgeManager:
             "data",
             self.knowledge_base_path
         )
+        rdf_path = os.path.join(self.path, "rdf_graph.ttl")
+
+        if not os.path.exists(rdf_path):
+            raise FileNotFoundError(
+                f"Knowledge base not found: {rdf_path}. "
+                "Build the KB first or select an existing one in the UI."
+            )
 
         # Lazy-load RDF graph once per KnowledgeManager instance.
         if not self.graph:
             print("Loading graph...", end="")
             self.graph = EnergeniusGraph()
-            self.graph.load_from_file(os.path.join(self.path, "rdf_graph.ttl"))
+            self.graph.load_from_file(rdf_path)
             print("OK")
 
         # Initialize persistent Chroma client (vector DB).

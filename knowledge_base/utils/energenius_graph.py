@@ -1,7 +1,9 @@
 from collections import defaultdict
+from pathlib import Path
+
+import pandas as pd
 from rdflib import FOAF, OWL, RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.plugins.sparql import prepareQuery
-import pandas as pd
 
 class EnergeniusGraph:
         
@@ -192,7 +194,9 @@ class EnergeniusGraph:
 
 
     def load_from_file(self, filename):
-        self.rdf_graph.parse(filename, format="turtle")
+        path = Path(filename)
+        with path.open("r", encoding="utf-8") as handle:
+            self.rdf_graph.parse(file=handle, format="turtle")
 
 
     def save_to_file(self, filename):

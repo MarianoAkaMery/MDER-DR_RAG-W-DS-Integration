@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     # Create the Guru instance
     if PRIVATE_SETINGS["LLM_LOCAL"]:
-        guru = Guru("ollama", "gpt-oss:20b", "mxbai-embed-large", "english", 0, "compact", "Italy")
+        guru = Guru("ollama", "llama3.2", "mxbai-embed-large", "english", 0, "compact", "Italy")
     else:
         guru = Guru("openai", "gpt-4", "text-embedding-3-small", "english", 0, "compact", "Italy")
 
