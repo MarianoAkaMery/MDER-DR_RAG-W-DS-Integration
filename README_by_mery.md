@@ -1,46 +1,25 @@
 # README by Mery
 
-## Nota aggiornata
+Questi sono i miei appunti operativi per usare il progetto in locale senza perdere tempo sulle stesse cose ogni volta.
 
-Quasi tutti i workaround sotto sulla KB `Tomato_recipes` non servono piu.
+## Stato attuale
 
-Adesso il progetto legge direttamente le knowledge base importate da:
+Adesso il progetto legge direttamente le knowledge base che ho importato da:
 
 - `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Italy`
 - `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Switzerland`
 - `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Europe`
 - `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Generic`
 
-Quindi:
+Per me questo significa:
 
-- non serve copiare `Tomato_recipes` in `files_Italy`
-- non serve ricostruire il DB vettoriale per usare la knowledge gia presente
-- `build_knowledge_base.py` serve solo se vuoi rigenerare una KB da nuove URL
+- non devo copiare `Tomato_recipes` in `files_Italy`
+- non devo ricostruire il DB vettoriale per usare la knowledge gia presente
+- devo usare `build_knowledge_base.py` solo per rigenerare una KB da nuove URL
 
-Questi sono appunti miei per riuscire a far partire questo progetto in locale.
+## Setup ambiente
 
-Obiettivo pratico:
-
-- far partire la webapp
-- usare Ollama in locale
-- capire quando il problema e Ollama e quando invece e la knowledge base
-- riuscire a lanciare anche gli script Python principali
-
-## 1. Stato attuale
-
-Quello che al momento sono riuscita a far partire:
-
-- `streamlit_ui.py` con Ollama locale: funziona
-- `build_knowledge_base.py`: funziona
-- `answer_question.py`: funziona, ma solo se la knowledge base si trova nel path che lui si aspetta
-
-Quello che non e automatico / pulito:
-
-- i nomi delle knowledge base non sono allineati bene tra script di build e script di query
-
-## 2. Setup ambiente
-
-Da PowerShell, nella root del progetto:
+Quando parto da zero, nella root del progetto faccio:
 
 ```powershell
 python -m venv .venv
@@ -49,16 +28,9 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## 3. Ollama in locale
+## Ollama in locale
 
-### Installazione
-
-Windows:
-
-- https://ollama.com/download
-- https://docs.ollama.com/windows
-
-### Verifica
+Per controllare che sia tutto a posto faccio:
 
 ```powershell
 ollama --version
@@ -66,28 +38,16 @@ curl http://localhost:11434/api/tags
 ollama list
 ```
 
-### Modelli da scaricare
-
-Quelli che mi sono serviti davvero:
+I modelli che mi servono sono:
 
 ```powershell
 ollama pull llama3.2
 ollama pull mxbai-embed-large
 ```
 
-Se voglio provare direttamente il modello da terminale:
+## Config importante
 
-```powershell
-ollama run llama3.2
-```
-
-## 4. Config importante del progetto
-
-File da controllare:
-
-- `private_settings.py`
-
-Valori importanti:
+Devo controllare `private_settings.py` e tenerlo cosi:
 
 ```python
 PRIVATE_SETINGS = {
@@ -98,166 +58,111 @@ PRIVATE_SETINGS = {
 
 Se `LLM_LOCAL=True`, il progetto usa Ollama locale.
 
-## 5. Webapp: test piu semplice
+## Webapp
 
-Comando:
+Per avviare la webapp faccio:
 
 ```powershell
 streamlit run .\streamlit_ui.py
 ```
 
-Impostazioni che ho usato:
+Le impostazioni che sto usando sono:
 
 - `Provider = ollama`
 - `Model = llama3.2`
 - `Embedding = mxbai-embed-large`
+- `Language = Italiano`
+- `Knowledge Base = Italy`
 
-### Test 1: verificare solo Ollama
+### Test rapido che faccio io
 
-Nella sidebar:
+1. metto `Use Knowledge Base = off`
+2. faccio una domanda generica per vedere se la chat risponde
+3. rimetto `Use Knowledge Base = on`
+4. faccio una domanda sul dominio energia
 
-- mettere `Use Knowledge Base = off`
+Se nei log vedo `Loading graph...OK`, per me vuol dire che la KB e stata caricata.
 
-Se cosi la chat risponde, allora:
+## Build knowledge base
 
-- la webapp funziona
-- Ollama funziona
-- il problema non e il modello
+Per usare la KB che ho gia importato non devo fare nessun build.
 
-Questo test l'ho fatto e funziona.
+Uso `build_knowledge_base.py` solo se devo rigenerare una knowledge base da nuove URL.
 
-## 6. Build della knowledge base
-
-Comando:
-
-```powershell
-python .\build_knowledge_base.py
-```
-
-Questo comando, quando ha funzionato, ha creato:
-
-- [knowledge_base/data/Tomato_recipes/rdf_graph.ttl](/C:/Users/maria/Desktop/W&DS%20-%20PROJECT/knowledge_base/data/Tomato_recipes/rdf_graph.ttl)
-- [knowledge_base/data/Tomato_recipes/chroma_db](/C:/Users/maria/Desktop/W&DS%20-%20PROJECT/knowledge_base/data/Tomato_recipes/chroma_db)
-
-Quindi il build va a buon fine se:
-
-- Ollama e acceso
-- `mxbai-embed-large` e presente
-
-## 7. Errore reale trovato durante il build
-
-Errore incontrato:
-
-```text
-ollama._types.ResponseError: model "mxbai-embed-large" not found
-```
-
-Significato:
-
-- mancava il modello embeddings in Ollama
-
-Fix:
+Esempio:
 
 ```powershell
-ollama pull mxbai-embed-large
+python .\build_knowledge_base.py --knowledge-base files_Italy --url "https://example.com/doc1" --url "https://example.com/doc2"
 ```
 
-## 8. Script `answer_question.py`
+## Test diretto da script
 
-Comando:
+Se voglio fare una prova veloce fuori dalla webapp faccio:
 
 ```powershell
 python .\answer_question.py
 ```
 
-Questo script non funziona subito dopo il build, perche cerca una knowledge base diversa da quella appena creata.
+Questo script usa `Italy` come KB di default.
 
-### Knowledge base che il build crea
+## Function call statica: risparmio gas -> HVAC
 
-Il build crea:
+Ho aggiunto un percorso statico prima del normale RAG per fare un calcolo deterministico del risparmio economico in un caso specifico:
 
-- `knowledge_base/data/Tomato_recipes/`
+- sostituzione di un impianto di riscaldamento a gas con HVAC / pompa di calore
 
-### Knowledge base che `answer_question.py` cerca
+Questa parte non usa la KB per fare il numero finale: intercetta la richiesta, estrae i parametri dal testo e applica una formula fissa.
 
-Lo script cerca:
+### Quando si attiva
 
-- `knowledge_base/data/files_Italy/`
+Si attiva solo se nel messaggio c'e chiaramente una richiesta di calcolo o stima e compaiono insieme:
 
-e in particolare:
+- gas
+- HVAC oppure `pompa di calore`
+- contesto di risparmio, costo o bolletta
 
-- [knowledge_base/data/files_Italy/rdf_graph.ttl](/C:/Users/maria/Desktop/W&DS%20-%20PROJECT/knowledge_base/data/files_Italy/rdf_graph.ttl)
-
-### Workaround che ha funzionato
-
-Per far partire `answer_question.py` senza cambiare altro:
-
-```powershell
-Copy-Item -Recurse -Force .\knowledge_base\data\Tomato_recipes .\knowledge_base\data\files_Italy
-```
-
-Poi:
-
-```powershell
-python .\answer_question.py
-```
-
-In questo modo lo script e partito correttamente.
-
-## 9. Errore reale trovato su Windows
-
-Errore visto:
+La frase tipo che posso usare per provarla e:
 
 ```text
-urllib.error.URLError: <urlopen error unknown url type: c>
+Calcola il risparmio economico in caso di sostituzione dell'impianto di riscaldamento da gas a HVAC con 1200 smc annui, prezzo gas 1,05 euro/smc, prezzo elettricita 0,24 euro/kWh, rendimento caldaia 92%, COP 3,8 e costo impianto 9000 euro.
 ```
 
-Significato pratico:
+### Parametri che legge dal testo
 
-- il codice stava provando a leggere un file locale Windows
-- una libreria lo interpretava come URL
-- quindi `C:\...` veniva letto male
+Obbligatori:
 
-Adesso questo problema non mi sta piu bloccando.
+- consumo annuo gas in `Smc`
+- prezzo gas in `euro/Smc`
+- prezzo elettricita in `euro/kWh`
 
-## 10. Come distinguere i problemi
+Opzionali:
 
-### Se con `Use Knowledge Base = off` la UI risponde
+- rendimento caldaia in `%`
+- `COP` della pompa di calore
+- costo impianto in `euro`
 
-Allora:
+Se mancano i parametri obbligatori, la chat mi chiede solo quelli mancanti.
 
-- Ollama funziona
-- la webapp funziona
+### Formula usata
 
-### Se con `Use Knowledge Base = on` la UI non risponde
+- calore utile = `Smc * 10.69 * rendimento_caldaia`
+- consumo elettrico HVAC = `calore_utile / COP`
+- costo annuo gas = `Smc * prezzo_gas`
+- costo annuo HVAC = `kWh_elettrici * prezzo_elettricita`
+- risparmio annuo = `costo_gas - costo_HVAC`
+- payback semplice = `costo_impianto / risparmio_annuo` se il costo impianto e presente e il risparmio e positivo
 
-Allora probabilmente manca la knowledge base che la UI sta cercando.
+Default se non li specifico:
 
-### Se `build_knowledge_base.py` si ferma
+- rendimento caldaia `90%`
+- `COP = 3.2`
 
-Controllare:
+### Dove sta il codice
 
-- Ollama acceso
-- modello `mxbai-embed-large` scaricato
+- [static_calculations.py](C:/Users/maria/Desktop/W&DS%20-%20PROJECT/orchestrator/static_calculations.py)
+- [guru.py](C:/Users/maria/Desktop/W&DS%20-%20PROJECT/orchestrator/guru.py)
 
-### Se `answer_question.py` si ferma con `Knowledge base not found`
-
-Controllare il path della KB che lui si aspetta.
-
-## 11. Ordine giusto da seguire
-
-Per non perdere tempo, l'ordine migliore per me e questo:
-
-1. attivare il venv
-2. controllare Ollama
-3. fare `ollama pull llama3.2`
-4. fare `ollama pull mxbai-embed-large`
-5. testare la UI con `Use Knowledge Base = off`
-6. lanciare `python .\build_knowledge_base.py`
-7. se serve usare il workaround per `files_Italy`
-8. lanciare `python .\answer_question.py`
-
-## 12. Comandi che mi servono davvero
+## Comandi che mi servono davvero
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -267,12 +172,10 @@ ollama list
 ollama pull llama3.2
 ollama pull mxbai-embed-large
 streamlit run .\streamlit_ui.py
-python .\build_knowledge_base.py
-Copy-Item -Recurse -Force .\knowledge_base\data\Tomato_recipes .\knowledge_base\data\files_Italy
 python .\answer_question.py
 ```
 
-## 13. Fonti utili su Ollama
+## Fonti utili su Ollama
 
 - https://ollama.com/download
 - https://docs.ollama.com/windows

@@ -4,6 +4,11 @@ from langchain_core.messages import BaseMessage
 
 from knowledge_base import KnowledgeManager
 from llm import LLMHandler
+from .static_calculations import (
+    calculate_gas_to_hvac_savings,
+    extract_savings_inputs,
+    should_calculate_gas_to_hvac_savings,
+)
 
 
 class Guru:
@@ -36,6 +41,12 @@ class Guru:
         self.knowledge_base = knowledge_base
         self.language = language
 
+    def _run_static_calculation(self, message: str) -> str | None:
+        if not should_calculate_gas_to_hvac_savings(message):
+            return None
+        inputs = extract_savings_inputs(message)
+        return calculate_gas_to_hvac_savings(self.language, inputs)
+
     def load_past_messages(self, messages: list[BaseMessage]) -> None:
         """
         Load past messages into the orchestrator.
@@ -64,6 +75,9 @@ If unsure, say you don’t know. Never invent information.
 Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
+        static_response = self._run_static_calculation(message)
+        if static_response is not None:
+            return static_response
         if self.use_knowledge:
             return self.llm.generate_response(self.know_base.user_message(message, self.answer_length), message, False)
         else:
@@ -89,7 +103,10 @@ If unsure, say you don’t know. Never invent information.
 Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
-        if self.use_knowledge:
+        static_response = self._run_static_calculation(message)
+        if static_response is not None:
+            yield static_response
+        elif self.use_knowledge:
             yield from self.llm.generate_response_stream(self.know_base.user_message(message, self.answer_length), message, False)
         else:
             yield from self.llm.generate_response_stream(llm_only, message, use_past_history=False)
