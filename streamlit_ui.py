@@ -7,6 +7,12 @@ import streamlit as st
 
 from orchestrator import LiveOrchestrator
 
+
+def clear_placeholder(placeholder) -> None:
+    """Best-effort cleanup for Streamlit placeholders during error handling."""
+    if hasattr(placeholder, "empty"):
+        placeholder.empty()
+
 # give title to the page
 st.title("Energenius RAG")
 st.subheader("A Graph-based RAG on Energy Efficiency")
@@ -152,10 +158,10 @@ if prompt := st.chat_input("Enter your query"):
             response_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
         except FileNotFoundError as exc:
-            response_placeholder.empty()
+            clear_placeholder(response_placeholder)
             st.error(
                 f"{exc}\n\nTip: build a knowledge base first or disable 'Use Knowledge Base' in the sidebar."
             )
         except Exception as exc:
-            response_placeholder.empty()
+            clear_placeholder(response_placeholder)
             st.error(f"Unexpected error: {exc}")

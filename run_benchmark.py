@@ -13,9 +13,9 @@ if __name__ == "__main__":
 
     # Create the Guru instance
     if PRIVATE_SETINGS["LLM_LOCAL"]:
-        guru = Guru("ollama", "gpt-oss:20b", "mxbai-embed-large", "english", 0, "Italy")
+        guru = Guru("ollama", "gpt-oss:20b", "mxbai-embed-large", "English", 0, "Compact", "Italy")
     else:
-        guru = Guru("openai", "gpt-4", "text-embedding-3-small", "english", 0, "Italy")
+        guru = Guru("openai", "gpt-4", "text-embedding-3-small", "English", 0, "Compact", "Italy")
 
     # Define the languages to benchmark
     languages = ["Italiano", "English"]

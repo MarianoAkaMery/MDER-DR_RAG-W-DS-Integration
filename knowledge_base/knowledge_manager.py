@@ -80,6 +80,32 @@ class KnowledgeManager:
 
         # Lazily loaded RDF graph object.
         self.graph = None
+        self.path = None
+
+    def _resolve_knowledge_base_path(self) -> str:
+        """Resolve the KB folder from the local project or imported Energenius assets."""
+        module_dir = os.path.dirname(os.path.realpath(__file__))
+        candidate_paths = [
+            os.path.join(
+                os.path.dirname(module_dir),
+                "home",
+                "mbrambilla",
+                "EnergeniusRAG",
+                "knowledge_base",
+                self.knowledge_base_path,
+            ),
+            os.path.join(module_dir, "data", self.knowledge_base_path),
+        ]
+
+        for candidate in candidate_paths:
+            if os.path.exists(os.path.join(candidate, "rdf_graph.ttl")):
+                return candidate
+
+        searched = ", ".join(candidate_paths)
+        raise FileNotFoundError(
+            f"Knowledge base '{self.knowledge_base_path}' not found. "
+            f"Searched in: {searched}."
+        )
 
 
     def _update_entries(self, existing, new_entries):
@@ -128,18 +154,11 @@ class KnowledgeManager:
         """
 
         # Resolve absolute path of KB data directory.
-        self.path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "data",
-            self.knowledge_base_path
-        )
+        resolved_path = self._resolve_knowledge_base_path()
+        if self.path != resolved_path:
+            self.path = resolved_path
+            self.graph = None
         rdf_path = os.path.join(self.path, "rdf_graph.ttl")
-
-        if not os.path.exists(rdf_path):
-            raise FileNotFoundError(
-                f"Knowledge base not found: {rdf_path}. "
-                "Build the KB first or select an existing one in the UI."
-            )
 
         # Lazy-load RDF graph once per KnowledgeManager instance.
         if not self.graph:
@@ -269,8 +288,11 @@ class KnowledgeManager:
 
             # Append chunk-like context if available
             if chunks:
-                
-                context_data += "\n\n" + dataframe_to_text(chunks, context_name='')
+                chunk_descriptions = self.graph.get_entity_descriptions(
+                    entities=[item["id"] for item in chunks],
+                    distances=[item["distance"] for item in chunks],
+                )
+                context_data += "\n\n" + dataframe_to_text(chunk_descriptions, context_name='')
 
             # Build final graph-aware prompt from language, length, and context
             prompt = graph_prompt(self.language, answer_length, context_data)

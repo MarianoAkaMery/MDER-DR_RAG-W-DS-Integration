@@ -1,5 +1,22 @@
 # README by Mery
 
+## Nota aggiornata
+
+Quasi tutti i workaround sotto sulla KB `Tomato_recipes` non servono piu.
+
+Adesso il progetto legge direttamente le knowledge base importate da:
+
+- `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Italy`
+- `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Switzerland`
+- `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Europe`
+- `home/mbrambilla/EnergeniusRAG/knowledge_base/files_Generic`
+
+Quindi:
+
+- non serve copiare `Tomato_recipes` in `files_Italy`
+- non serve ricostruire il DB vettoriale per usare la knowledge gia presente
+- `build_knowledge_base.py` serve solo se vuoi rigenerare una KB da nuove URL
+
 Questi sono appunti miei per riuscire a far partire questo progetto in locale.
 
 Obiettivo pratico:

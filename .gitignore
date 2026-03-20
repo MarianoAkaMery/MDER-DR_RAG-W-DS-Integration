@@ -11,6 +11,7 @@ ENV/
 
 # Local knowledge base artifacts generated at runtime
 knowledge_base/data/
+home/mbrambilla/EnergeniusRAG/
 
 # Prompt/debug artifacts
 prompt.txt

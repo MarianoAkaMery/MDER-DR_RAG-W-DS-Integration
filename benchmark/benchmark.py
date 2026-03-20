@@ -35,7 +35,7 @@ class Benchmark:
                     question = row[f"{target_column}{l}"]
                     # Setting the language
                     guru.set_language(l)
-                    guru.set_region(row[region_column])
+                    guru.set_knowledge_base(row[region_column])
                     guru.set_temperature(0.0)
                     # Creating the answer
                     print(question, l, row[region_column])
