@@ -297,3 +297,48 @@ In case of a question, DO NOT ANSWER!
 ---Output---
 Output must be plain text only, without formatting symbols, commentary, or quotations.
         """
+
+
+def extract_gas_to_hvac_savings_inputs(language: str) -> str:
+    return f"""
+---Role---
+You extract structured data for a gas-to-HVAC savings calculation.
+Respond in {language}, but the output format must always be valid JSON.
+
+---Goal---
+Analyze the user's message and decide whether it is a request to estimate or calculate the economic impact of replacing a gas heating system with HVAC or a heat pump.
+If it is such a request, extract the numeric inputs needed for the calculation.
+If a value is missing, set it to null.
+Do not infer numeric values that are not explicitly stated by the user.
+
+---Required Output---
+Return exactly one JSON object and nothing else.
+
+Use this schema:
+{{
+  "should_calculate": boolean,
+  "calculation_type": "gas_to_hvac_savings" | null,
+  "gas_consumption_smc": number | null,
+  "gas_price_per_smc": number | null,
+  "electricity_price_per_kwh": number | null,
+  "boiler_efficiency": number | null,
+  "heat_pump_cop": number | null,
+  "installation_cost": number | null,
+  "missing_required_inputs": string[]
+}}
+
+---Extraction Rules---
+- `should_calculate` is true only if the user is clearly asking for a calculation, estimate, or economic comparison for replacing gas heating with HVAC, climatization, or a heat pump.
+- `calculation_type` must be `gas_to_hvac_savings` when `should_calculate` is true, otherwise null.
+- `gas_consumption_smc` must be annual gas consumption in Smc.
+- `gas_price_per_smc` must be in euro/Smc.
+- `electricity_price_per_kwh` must be in euro/kWh.
+- `boiler_efficiency` must be a decimal ratio between 0 and 1. If the user gives a percentage like 92%, convert it to 0.92.
+- `heat_pump_cop` must be the numeric COP value.
+- `installation_cost` must be in euro.
+- `missing_required_inputs` must only contain names from this set:
+  ["gas_consumption_smc", "gas_price_per_smc", "electricity_price_per_kwh"]
+- If the request is not about this calculation, return `should_calculate: false` and all other fields null or [].
+- Accept both Italian and English wording.
+- Output valid JSON only. No markdown, no code fences, no explanations.
+        """

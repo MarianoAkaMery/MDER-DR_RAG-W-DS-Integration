@@ -3,11 +3,11 @@
 from langchain_core.messages import BaseMessage
 
 from knowledge_base import KnowledgeManager
+from knowledge_base.utils.graph_prompt import extract_gas_to_hvac_savings_inputs
 from llm import LLMHandler
 from .static_calculations import (
     calculate_gas_to_hvac_savings,
-    extract_savings_inputs,
-    should_calculate_gas_to_hvac_savings,
+    extract_savings_intent_and_inputs,
 )
 
 
@@ -44,12 +44,18 @@ class Guru:
     def _run_static_calculation(self, message: str) -> str | None:
         print("[guru] Entering _run_static_calculation")
         print(f"[guru] Message received for static calculation: {message}")
-        should_run = should_calculate_gas_to_hvac_savings(message)
+        extraction_prompt = extract_gas_to_hvac_savings_inputs(self.language)
+        extraction_response = self.llm.generate_response(
+            extraction_prompt,
+            message,
+            use_past_history=False,
+        )
+        print(f"[guru] LLM extraction response: {extraction_response}")
+        should_run, inputs = extract_savings_intent_and_inputs(extraction_response)
         print(f"[guru] should_calculate_gas_to_hvac_savings -> {should_run}")
         if not should_run:
             print("[guru] Static calculation skipped")
             return None
-        inputs = extract_savings_inputs(message)
         print(f"[guru] Inputs extracted for static calculation: {inputs}")
         response = calculate_gas_to_hvac_savings(self.language, inputs)
         print(f"[guru] Static calculation response ready:\n{response}")

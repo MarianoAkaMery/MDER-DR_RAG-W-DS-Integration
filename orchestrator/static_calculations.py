@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import re
+import json
 from dataclasses import dataclass
+from typing import Any
 
 
 KWH_PER_SMC_GAS = 10.69
 DEFAULT_BOILER_EFFICIENCY = 0.90
 DEFAULT_HEAT_PUMP_COP = 3.20
-CURRENCY_PATTERN = r"(?:EUR|euro|€)"
 
 
 def _is_italian(language: str | None) -> bool:
@@ -23,23 +23,33 @@ def _is_italian(language: str | None) -> bool:
     return is_italian
 
 
-def _parse_number(raw_value: str) -> float:
-    print(f"Parsing numeric value from raw input '{raw_value}'")
-    normalized = raw_value.strip().replace(".", "").replace(",", ".")
-    parsed = float(normalized)
-    print(f"Normalized numeric value '{normalized}' -> {parsed}")
-    return parsed
-
-
-def _extract_number(pattern: str, message: str) -> float | None:
-    print(f"Extracting number with pattern '{pattern}'")
-    match = re.search(pattern, message, flags=re.IGNORECASE)
-    if not match:
-        print("No numeric match found")
+def _coerce_float(value: Any) -> float | None:
+    if value is None or value == "":
         return None
-    extracted = _parse_number(match.group(1))
-    print(f"Matched raw number '{match.group(1)}' -> {extracted}")
-    return extracted
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        normalized = value.strip().replace(",", ".")
+        return float(normalized)
+    raise ValueError(f"Unsupported numeric value: {value!r}")
+
+
+def _extract_json_object(raw_response: str) -> dict[str, Any]:
+    print(f"Parsing LLM extraction payload: {raw_response}")
+    cleaned = raw_response.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("No JSON object found in LLM response")
+    return json.loads(cleaned[start : end + 1])
 
 
 @dataclass
@@ -52,87 +62,28 @@ class SavingsInputs:
     installation_cost: float | None = None
 
 
-def should_calculate_gas_to_hvac_savings(message: str) -> bool:
-    print("Checking whether the message should trigger gas-to-HVAC savings calculation")
-    lowered = message.lower()
-    has_calc_intent = any(
-        token in lowered
-        for token in (
-            "calcola",
-            "calcolare",
-            "calcolo",
-            "stimare",
-            "stima",
-            "calculate",
-            "calculation",
-            "estimate",
-            "estimating",
-        )
-    )
-    has_savings_intent = any(
-        token in lowered
-        for token in (
-            "risparmio",
-            "risparmio economico",
-            "spesa",
-            "costo",
-            "bolletta",
-            "saving",
-            "savings",
-            "cost",
-            "bill",
-            "expense",
-        )
-    )
-    has_gas = "gas" in lowered
-    has_hvac = any(
-        token in lowered
-        for token in ("hvac", "pompa di calore", "heat pump", "climatizzazione")
-    )
-    should_calculate = has_calc_intent and has_savings_intent and has_gas and has_hvac
-    print(
-        "Trigger flags:"
-        f" calc_intent={has_calc_intent},"
-        f" savings_intent={has_savings_intent},"
-        f" gas={has_gas},"
-        f" hvac={has_hvac},"
-        f" result={should_calculate}"
-    )
-    return should_calculate
+def extract_savings_intent_and_inputs(raw_response: str) -> tuple[bool, SavingsInputs]:
+    payload = _extract_json_object(raw_response)
+    should_calculate = bool(payload.get("should_calculate", False))
+    print(f"LLM should_calculate flag: {should_calculate}")
 
-
-def extract_savings_inputs(message: str) -> SavingsInputs:
-    print("Extracting structured inputs for gas-to-HVAC savings calculation")
-    inputs = SavingsInputs()
-    inputs.gas_consumption_smc = _extract_number(
-        r"(\d+(?:[.,]\d+)?)\s*(?:smc|sm3|m3|mc)\b", message
-    )
-    inputs.gas_price_per_smc = _extract_number(
-        rf"(?:prezzo\s+gas|gas\s*price|costo\s+gas)[^\d]*(\d+(?:[.,]\d+)?)\s*(?:{CURRENCY_PATTERN})?\s*/?\s*(?:smc|sm3|m3|mc)",
-        message,
-    )
-    inputs.electricity_price_per_kwh = _extract_number(
-        rf"(?:prezzo\s+(?:elettricita|energia elettrica)|electricity\s*price|costo\s+(?:luce|elettricita|energia elettrica))[^\d]*(\d+(?:[.,]\d+)?)\s*(?:{CURRENCY_PATTERN})?\s*/?\s*kwh",
-        message,
+    inputs = SavingsInputs(
+        gas_consumption_smc=_coerce_float(payload.get("gas_consumption_smc")),
+        gas_price_per_smc=_coerce_float(payload.get("gas_price_per_smc")),
+        electricity_price_per_kwh=_coerce_float(payload.get("electricity_price_per_kwh")),
+        installation_cost=_coerce_float(payload.get("installation_cost")),
     )
 
-    boiler_efficiency = _extract_number(
-        r"(?:rendimento\s+(?:caldaia|impianto\s+gas)|efficienza\s+(?:caldaia|impianto\s+gas)|boiler\s+efficiency|gas\s+system\s+efficiency)[^\d]*(\d+(?:[.,]\d+)?)\s*%",
-        message,
-    )
+    boiler_efficiency = _coerce_float(payload.get("boiler_efficiency"))
     if boiler_efficiency is not None:
-        inputs.boiler_efficiency = boiler_efficiency / 100
+        inputs.boiler_efficiency = boiler_efficiency
 
-    heat_pump_cop = _extract_number(r"\bcop\b[^\d]*(\d+(?:[.,]\d+)?)", message)
+    heat_pump_cop = _coerce_float(payload.get("heat_pump_cop"))
     if heat_pump_cop is not None:
         inputs.heat_pump_cop = heat_pump_cop
 
-    inputs.installation_cost = _extract_number(
-        rf"(?:costo\s+(?:impianto|installazione|hvac)|investimento|installation\s+cost|system\s+cost|hvac\s+cost|investment)[^\d]*(\d+(?:[.,]\d+)?)\s*(?:{CURRENCY_PATTERN})",
-        message,
-    )
-    print(f"Extracted savings inputs: {inputs}")
-    return inputs
+    print(f"Structured inputs from LLM: {inputs}")
+    return should_calculate, inputs
 
 
 def _format_currency(value: float) -> str:
@@ -213,7 +164,7 @@ def calculate_gas_to_hvac_savings(language: str, inputs: SavingsInputs) -> str:
     if _is_italian(language):
         print("Formatting response in Italian")
         lines = [
-            "Stima statica del risparmio economico annuo gas -> HVAC:",
+            "Stima del risparmio economico annuo gas -> HVAC:",
             f"- costo annuo attuale gas: {_format_currency(annual_gas_cost)} euro",
             f"- costo annuo stimato HVAC: {_format_currency(annual_hvac_cost)} euro",
             f"- risparmio annuo stimato: {_format_currency(annual_savings)} euro",
@@ -235,7 +186,7 @@ def calculate_gas_to_hvac_savings(language: str, inputs: SavingsInputs) -> str:
 
     print("Formatting response in English")
     lines = [
-        "Static estimate of annual gas -> HVAC economic savings:",
+        "Estimate of annual gas -> HVAC economic savings:",
         f"- current annual gas cost: {_format_currency(annual_gas_cost)} euro",
         f"- estimated annual HVAC cost: {_format_currency(annual_hvac_cost)} euro",
         f"- estimated annual savings: {_format_currency(annual_savings)} euro",
@@ -254,4 +205,3 @@ def calculate_gas_to_hvac_savings(language: str, inputs: SavingsInputs) -> str:
         lines.append("- with these assumptions there is no positive annual saving.")
     print("Static savings response assembled in English")
     return "\n".join(lines)
-
