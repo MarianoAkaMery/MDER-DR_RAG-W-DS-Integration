@@ -42,10 +42,18 @@ class Guru:
         self.language = language
 
     def _run_static_calculation(self, message: str) -> str | None:
-        if not should_calculate_gas_to_hvac_savings(message):
+        print("[guru] Entering _run_static_calculation")
+        print(f"[guru] Message received for static calculation: {message}")
+        should_run = should_calculate_gas_to_hvac_savings(message)
+        print(f"[guru] should_calculate_gas_to_hvac_savings -> {should_run}")
+        if not should_run:
+            print("[guru] Static calculation skipped")
             return None
         inputs = extract_savings_inputs(message)
-        return calculate_gas_to_hvac_savings(self.language, inputs)
+        print(f"[guru] Inputs extracted for static calculation: {inputs}")
+        response = calculate_gas_to_hvac_savings(self.language, inputs)
+        print(f"[guru] Static calculation response ready:\n{response}")
+        return response
 
     def load_past_messages(self, messages: list[BaseMessage]) -> None:
         """
@@ -75,12 +83,16 @@ If unsure, say you don’t know. Never invent information.
 Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
+        print("[guru] user_message called")
         static_response = self._run_static_calculation(message)
         if static_response is not None:
+            print("[guru] Returning static response from user_message")
             return static_response
         if self.use_knowledge:
+            print("[guru] No static response, using knowledge base")
             return self.llm.generate_response(self.know_base.user_message(message, self.answer_length), message, False)
         else:
+            print("[guru] No static response, using llm_only")
             return self.llm.generate_response(llm_only, message, use_past_history=False)
 
     def user_message_stream(self, message: str):# -> str:
@@ -103,15 +115,20 @@ If unsure, say you don’t know. Never invent information.
 Reply EXTREMELY BRIEFLY in {self.language}.
 Provide only the answer.
         """
+        print("[guru] user_message_stream called")
         static_response = self._run_static_calculation(message)
         if static_response is not None:
+            print("[guru] Yielding static response from user_message_stream")
             yield static_response
         elif self.use_knowledge:
+            print("[guru] No static response in stream, using knowledge base")
             yield from self.llm.generate_response_stream(self.know_base.user_message(message, self.answer_length), message, False)
         else:
+            print("[guru] No static response in stream, using llm_only")
             yield from self.llm.generate_response_stream(llm_only, message, use_past_history=False)
         
     def set_language(self, language: str) -> None:
+        self.language = language
         self.know_base.language = language
         self.llm.set_language(language)
         

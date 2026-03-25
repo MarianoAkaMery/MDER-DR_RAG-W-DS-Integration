@@ -127,6 +127,12 @@ La frase tipo che posso usare per provarla e:
 Calcola il risparmio economico in caso di sostituzione dell'impianto di riscaldamento da gas a HVAC con 1200 smc annui, prezzo gas 1,05 euro/smc, prezzo elettricita 0,24 euro/kWh, rendimento caldaia 92%, COP 3,8 e costo impianto 9000 euro.
 ```
 
+Posso provarla anche in inglese con una frase tipo:
+
+```text
+Calculate the economic savings for replacing a gas heating system with HVAC using 1200 Smc per year, gas price 1.05 euro/Smc, electricity price 0.24 euro/kWh, boiler efficiency 92%, COP 3.8, and installation cost 9000 euro.
+```
+
 ### Parametri che legge dal testo
 
 Obbligatori:
